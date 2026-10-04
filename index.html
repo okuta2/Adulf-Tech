@@ -1,0 +1,759 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adulf Tech Ltd - Smart Lock Promo 3D Showcase</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- GSAP for smooth cinematic animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      user-select: none;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0d0e12;
+      color: #fff;
+      overflow-x: hidden;
+    }
+    .font-montserrat {
+      font-family: 'Montserrat', sans-serif;
+    }
+    
+    /* Promotional Banner Slash Styles */
+    .promo-badge {
+      transform: skew(-10deg) rotate(-4deg);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .promo-badge:hover {
+      transform: skew(-10deg) rotate(-2deg) scale(1.04);
+    }
+    
+    .promo-badge-orange {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      clip-path: polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%);
+    }
+    .promo-badge-yellow {
+      background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+      clip-path: polygon(3% 0%, 98% 0%, 95% 100%, 0% 100%);
+    }
+    .promo-badge-white {
+      background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+      clip-path: polygon(5% 0%, 100% 0%, 97% 100%, 0% 100%);
+    }
+
+    .yellow-brush-bg {
+      background: #facc15;
+      mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 100%);
+    }
+
+    /* Glass Panels */
+    .glass-panel {
+      background: rgba(18, 20, 29, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .feature-circle {
+      border: 2px solid #ea580c;
+      transition: all 0.3s ease;
+    }
+    .feature-item:hover .feature-circle {
+      transform: translateY(-4px) scale(1.08);
+      border-color: #facc15;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+      background: rgba(234, 88, 12, 0.18);
+    }
+
+    /* Pulse Glow */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.08); }
+    }
+    .glow-effect {
+      animation: pulse-glow 3s infinite ease-in-out;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ea580c;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body class="relative min-h-screen w-full overflow-hidden flex flex-col justify-between">
+
+  <!-- 3D Canvas Layer -->
+  <div id="webgl-container" class="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"></div>
+
+  <!-- Interactive 3D Hotspot Overlay / Instruction -->
+  <div class="absolute right-6 top-24 z-20 pointer-events-none hidden md:flex flex-col items-end gap-2">
+    <div class="glass-panel px-4 py-2 rounded-full text-xs font-semibold tracking-wider text-orange-400 flex items-center gap-2 border border-orange-500/30">
+      <span class="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping"></span>
+      <span>INTERACTIVE 3D MODEL</span>
+    </div>
+    <p class="text-[11px] text-gray-400 bg-black/50 px-3 py-1 rounded-md backdrop-blur-sm">
+      <i class="fa-solid fa-arrows-rotate mr-1"></i> Drag to Orbit • Click Handle to Unlock • Touch Keypad
+    </p>
+  </div>
+
+  <!-- Camera Preset Controls -->
+  <div class="absolute right-6 bottom-28 z-20 flex flex-col gap-2">
+    <button onclick="setCameraView('overview')" class="glass-panel hover:bg-orange-600/30 text-xs px-3 py-2 rounded-lg font-medium transition text-gray-200 border border-white/10 hover:border-orange-500/50 flex items-center gap-2">
+      <i class="fa-solid fa-eye text-orange-400"></i> Full View
+    </button>
+    <button onclick="setCameraView('keypad')" class="glass-panel hover:bg-orange-600/30 text-xs px-3 py-2 rounded-lg font-medium transition text-gray-200 border border-white/10 hover:border-orange-500/50 flex items-center gap-2">
+      <i class="fa-solid fa-calculator text-yellow-400"></i> Keypad
+    </button>
+    <button onclick="setCameraView('handle')" class="glass-panel hover:bg-orange-600/30 text-xs px-3 py-2 rounded-lg font-medium transition text-gray-200 border border-white/10 hover:border-orange-500/50 flex items-center gap-2">
+      <i class="fa-solid fa-fingerprint text-orange-400"></i> Biometric Handle
+    </button>
+    <button onclick="triggerUnlock()" class="bg-gradient-to-r from-orange-600 to-yellow-500 text-black font-extrabold text-xs px-3 py-2 rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2">
+      <i class="fa-solid fa-lock-open"></i> Test Unlock
+    </button>
+  </div>
+
+  <!-- Top Header / Brand -->
+  <header class="relative z-10 w-full px-6 py-4 md:px-12 flex items-center justify-between pointer-events-none">
+    <div class="flex items-center gap-3 pointer-events-auto">
+      <!-- 3D Brand Logo Mark -->
+      <div class="w-11 h-11 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 border border-orange-400/40 transform -rotate-3">
+        <span class="font-black text-2xl text-white font-montserrat">A</span>
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-black tracking-wider text-white uppercase font-montserrat leading-none">
+          ADULF TECH LTD
+        </h1>
+        <p class="text-[10px] md:text-[11px] font-semibold tracking-widest text-orange-400 uppercase mt-0.5">
+          Building Integration Systems
+        </p>
+      </div>
+    </div>
+
+    <div class="hidden sm:block text-right pointer-events-auto">
+      <p class="text-sm font-semibold text-gray-300 italic tracking-wide">
+        Smarter Technology. <span class="text-orange-400 font-bold">Safer Spaces.</span>
+      </p>
+      <div class="flex items-center justify-end gap-1.5 mt-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Promo Live Active</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Hero Graphic Overlay (Left aligned matching the flyer layout) -->
+  <main class="relative z-10 w-full px-6 md:px-12 pointer-events-none grid grid-cols-1 lg:grid-cols-12 gap-6 items-center flex-1">
+    
+    <div class="lg:col-span-6 flex flex-col justify-center space-y-4 max-w-xl pointer-events-auto">
+      
+      <!-- Kinetic Promo Badges -->
+      <div class="flex flex-col items-start gap-1 py-1">
+        <div class="promo-badge promo-badge-orange px-8 py-2 md:px-10 md:py-2.5">
+          <span class="text-3xl md:text-5xl font-black italic tracking-tighter text-white font-montserrat drop-shadow-md">
+            PROMO
+          </span>
+        </div>
+        <div class="promo-badge promo-badge-yellow px-9 py-2 md:px-12 md:py-2.5 -mt-2.5 ml-2 md:ml-4">
+          <span class="text-3xl md:text-5xl font-black italic tracking-tighter text-black font-montserrat drop-shadow">
+            PROMO
+          </span>
+        </div>
+        <div class="promo-badge promo-badge-white px-10 py-2 md:px-14 md:py-2.5 -mt-2.5 ml-4 md:ml-8">
+          <span class="text-3xl md:text-5xl font-black italic tracking-tighter text-orange-600 font-montserrat drop-shadow-md">
+            PROMO
+          </span>
+        </div>
+      </div>
+
+      <!-- Price Callout & Offer -->
+      <div class="space-y-1 pt-2">
+        <div class="text-xl md:text-2xl font-bold text-gray-200">
+          With just
+        </div>
+        
+        <!-- Brush Splatter Price Tag -->
+        <div class="inline-block relative">
+          <div class="bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-black font-black text-4xl md:text-6xl px-6 py-2 rounded-lg font-montserrat tracking-tight transform -rotate-1 shadow-2xl flex items-center gap-1 border-b-4 border-yellow-600">
+            <span>₦180,000</span>
+          </div>
+        </div>
+
+        <p class="text-lg md:text-2xl font-semibold text-gray-200 leading-snug pt-2">
+          you can have a <span class="text-orange-400 font-black uppercase underline decoration-yellow-400 underline-offset-4">smart lock</span>
+          <br class="hidden sm:inline" /> installed for you <span class="text-yellow-400 font-extrabold">for free.</span>
+        </p>
+      </div>
+
+      <!-- 4 Access Method Circular Features (from the flyer) -->
+      <div class="grid grid-cols-4 gap-2 sm:gap-4 pt-3 max-w-md">
+        <!-- Fingerprint -->
+        <div class="feature-item flex flex-col items-center text-center cursor-pointer group" onclick="setCameraView('handle')">
+          <div class="feature-circle w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 flex items-center justify-center mb-1.5 p-3">
+            <i class="fa-solid fa-fingerprint text-orange-400 text-xl sm:text-2xl"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-bold text-gray-300 group-hover:text-yellow-400 leading-tight">Fingerprint<br/>Access</span>
+        </div>
+        <!-- PIN Code -->
+        <div class="feature-item flex flex-col items-center text-center cursor-pointer group" onclick="setCameraView('keypad')">
+          <div class="feature-circle w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 flex items-center justify-center mb-1.5 p-3">
+            <i class="fa-solid fa-braille text-orange-400 text-xl sm:text-2xl"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-bold text-gray-300 group-hover:text-yellow-400 leading-tight">PIN Code<br/>Access</span>
+        </div>
+        <!-- Card -->
+        <div class="feature-item flex flex-col items-center text-center cursor-pointer group" onclick="setCameraView('keypad')">
+          <div class="feature-circle w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 flex items-center justify-center mb-1.5 p-3">
+            <i class="fa-solid fa-id-card-clip text-orange-400 text-xl sm:text-2xl"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-bold text-gray-300 group-hover:text-yellow-400 leading-tight">Card<br/>Access</span>
+        </div>
+        <!-- Key -->
+        <div class="feature-item flex flex-col items-center text-center cursor-pointer group" onclick="setCameraView('overview')">
+          <div class="feature-circle w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 flex items-center justify-center mb-1.5 p-3">
+            <i class="fa-solid fa-key text-orange-400 text-xl sm:text-2xl"></i>
+          </div>
+          <span class="text-[10px] sm:text-xs font-bold text-gray-300 group-hover:text-yellow-400 leading-tight">Key<br/>Access</span>
+        </div>
+      </div>
+
+      <!-- Urgency Banner (50 Slots Ribbon) -->
+      <div class="pt-2">
+        <div class="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 via-red-500 to-orange-600 px-5 py-2.5 rounded-2xl shadow-xl shadow-red-600/30 border border-red-400/40">
+          <i class="fa-solid fa-bullhorn text-yellow-300 text-xl animate-bounce"></i>
+          <p class="text-xs sm:text-sm font-bold text-white tracking-wide">
+            Hurry now to enjoy the promo as we have just <span class="text-yellow-300 text-base sm:text-lg font-black underline decoration-white">50 slots</span> available.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Center/Right: Empty spacing so 3D lock remains center stage -->
+    <div class="lg:col-span-6 h-64 lg:h-full pointer-events-none"></div>
+  </main>
+
+  <!-- Bottom Contact Bar / Footer (Exact details from flyer) -->
+  <footer class="relative z-10 w-full bg-black/85 backdrop-blur-md border-t border-orange-500/30 px-6 py-3 md:px-12 text-xs">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-gray-300">
+      
+      <!-- Phone & Social & Web -->
+      <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6 font-semibold">
+        <a href="tel:08104047050" class="flex items-center gap-2 hover:text-orange-400 transition text-yellow-400 font-bold">
+          <i class="fa-solid fa-phone-volume text-orange-500"></i>
+          <span>08104047050</span>
+        </a>
+        <div class="flex items-center gap-2 hover:text-orange-400 transition">
+          <div class="flex items-center gap-1.5 text-orange-400">
+            <i class="fa-brands fa-facebook-f"></i>
+            <i class="fa-brands fa-instagram"></i>
+            <i class="fa-brands fa-tiktok"></i>
+          </div>
+          <span class="text-white font-medium">@Adulftechltd</span>
+        </div>
+        <a href="https://www.adulfconcept.com" target="_blank" class="flex items-center gap-1.5 hover:text-orange-400 transition text-gray-200">
+          <i class="fa-solid fa-globe text-orange-500"></i>
+          <span>www.adulfconcept.com</span>
+        </a>
+      </div>
+
+      <!-- Physical Offices -->
+      <div class="flex flex-wrap items-center justify-center md:justify-end gap-3 text-[10px] text-gray-400 text-center md:text-right">
+        <div>
+          <i class="fa-solid fa-location-dot text-orange-500 mr-1"></i>
+          <strong class="text-gray-300">Abuja:</strong> CF 70, Kaura Market, Opp. Prince & Princess Estate, Gudu.
+        </div>
+        <span class="hidden sm:inline text-gray-600">|</span>
+        <div>
+          <strong class="text-gray-300">Port-Harcourt:</strong> GU Ake Rd, Eliosu.
+        </div>
+        <span class="hidden sm:inline text-gray-600">|</span>
+        <div class="bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 text-orange-300">
+          <strong>UK Office:</strong> London
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ================= THREE.JS 3D SMART LOCK SCRIPT ================= -->
+  <script>
+    let scene, camera, renderer, controls;
+    let smartLockGroup, handlePivot, statusLedMesh, digitsGroup;
+    let isUnlocked = false;
+    let raycaster, mouse;
+
+    // Synthesize simple UI Audio Effects using Web Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playBeep(freq = 880, duration = 0.08, type = "sine") {
+      try {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function init3D() {
+      const container = document.getElementById('webgl-container');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // Scene
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x0c0d14, 0.04);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+      // Positioned nicely to display the lock on the right half of the screen
+      camera.position.set(2.2, 0.4, 4.2);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      // OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 8.5;
+      controls.minDistance = 1.6;
+      controls.target.set(0.6, -0.1, 0);
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+      controls.minPolarAngle = Math.PI / 3.5;
+
+      // Lights
+      setupLighting();
+
+      // Build 3D Models (Door + Smart Lock Assembly)
+      createSceneModels();
+
+      // Interactions
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('pointerdown', onPointerClick);
+    }
+
+    function setupLighting() {
+      // Ambient warm light
+      const ambientLight = new THREE.AmbientLight(0xffeedd, 0.6);
+      scene.add(ambientLight);
+
+      // Main Studio Key Light
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      keyLight.position.set(4, 5, 5);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 2048;
+      keyLight.shadow.mapSize.height = 2048;
+      keyLight.shadow.bias = -0.0005;
+      scene.add(keyLight);
+
+      // Orange Neon Rim Light (Matches Brand)
+      const rimLightOrange = new THREE.SpotLight(0xff6600, 4.5, 12, Math.PI / 3, 0.5);
+      rimLightOrange.position.set(-3.5, 2, -1);
+      rimLightOrange.target.position.set(0.6, 0, 0);
+      scene.add(rimLightOrange);
+      scene.add(rimLightOrange.target);
+
+      // Soft Blue Counter Accent
+      const fillLightBlue = new THREE.PointLight(0x38bdf8, 1.2, 8);
+      fillLightBlue.position.set(2.5, -2, 2.5);
+      scene.add(fillLightBlue);
+    }
+
+    // Procedural Keypad Texture
+    function createKeypadCanvas() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      // Glass Backplate
+      ctx.fillStyle = "#0c0d11";
+      ctx.fillRect(0, 0, 512, 1024);
+
+      // Subtle gradient highlight
+      const grad = ctx.createLinearGradient(0, 0, 512, 1024);
+      grad.addColorStop(0, 'rgba(255,255,255,0.06)');
+      grad.addColorStop(0.5, 'rgba(255,255,255,0.01)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 1024);
+
+      // Keypad numbers grid (1 2 3 / 4 5 6 / 7 8 9 / * 0 #)
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "bold 58px 'Montserrat', sans-serif";
+      ctx.fillStyle = "#e2e8f0";
+      ctx.shadowColor = "rgba(255, 255, 255, 0.4)";
+      ctx.shadowBlur = 8;
+
+      const keys = [
+        ["1", "2", "3"],
+        ["4", "5", "6"],
+        ["7", "8", "9"],
+        ["*", "0", "#"]
+      ];
+
+      const startX = 110;
+      const stepX = 146;
+      const startY = 240;
+      const stepY = 120;
+
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 3; c++) {
+          const char = keys[r][c];
+          const x = startX + c * stepX;
+          const y = startY + r * stepY;
+          ctx.fillText(char, x, y);
+        }
+      }
+
+      // Card NFC Icon / Smart Lock Logo on the bottom plate
+      ctx.font = "bold 32px 'Montserrat', sans-serif";
+      ctx.fillStyle = "#f97316";
+      ctx.shadowColor = "rgba(249, 115, 22, 0.6)";
+      ctx.shadowBlur = 10;
+      ctx.fillText("[  CARD  ]", 256, 740);
+
+      ctx.font = "600 24px 'Montserrat', sans-serif";
+      ctx.fillStyle = "#94a3b8";
+      ctx.shadowBlur = 0;
+      ctx.fillText("SMART LOCK", 256, 880);
+
+      return canvas;
+    }
+
+    // Procedural Door Wood Material
+    function createWoodTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = "#271b14";
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Wood Grain lines
+      for (let i = 0; i < 600; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? '#1f140e' : '#33231a';
+        const y = Math.random() * 1024;
+        const h = Math.random() * 4 + 1;
+        ctx.fillRect(0, y, 1024, h);
+      }
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createSceneModels() {
+      const mainGroup = new THREE.Group();
+      mainGroup.position.set(0.6, 0, 0);
+
+      // --- 1. Realistic Door Slab ---
+      const doorGeom = new THREE.BoxGeometry(2.4, 5.2, 0.28);
+      const woodTex = createWoodTexture();
+      woodTex.wrapS = THREE.RepeatWrapping;
+      woodTex.wrapT = THREE.RepeatWrapping;
+      woodTex.repeat.set(1, 2);
+
+      const doorMat = new THREE.MeshStandardMaterial({
+        color: 0x3d271d,
+        map: woodTex,
+        roughness: 0.65,
+        metalness: 0.1
+      });
+      const door = new THREE.Mesh(doorGeom, doorMat);
+      door.position.set(-0.8, 0, -0.14);
+      door.receiveShadow = true;
+      mainGroup.add(door);
+
+      // Door Frame / Side Lock Plate (Stainless steel latch plate)
+      const mortisePlateGeom = new THREE.BoxGeometry(0.04, 1.8, 0.22);
+      const steelMat = new THREE.MeshStandardMaterial({
+        color: 0xd8d8d8,
+        metalness: 0.95,
+        roughness: 0.2
+      });
+      const mortisePlate = new THREE.Mesh(mortisePlateGeom, steelMat);
+      mortisePlate.position.set(0.4, 0, -0.14);
+      mainGroup.add(mortisePlate);
+
+      // Latch Bolt (Retracts on unlock)
+      const latchBoltGeom = new THREE.BoxGeometry(0.12, 0.16, 0.12);
+      const latchBolt = new THREE.Mesh(latchBoltGeom, steelMat);
+      latchBolt.name = "latchBolt";
+      latchBolt.position.set(0.44, 0.2, -0.14);
+      mainGroup.add(latchBolt);
+
+      // --- 2. Smart Lock Body (Anodized Matte Aluminum & Chamfered Bezel) ---
+      smartLockGroup = new THREE.Group();
+      smartLockGroup.position.set(0.05, 0.1, 0.01);
+
+      // Outer Back Bezel (Sleek Black Metallic)
+      const lockBodyGeom = new THREE.BoxGeometry(0.44, 1.72, 0.08);
+      const metalLockMat = new THREE.MeshStandardMaterial({
+        color: 0x121316,
+        metalness: 0.88,
+        roughness: 0.28,
+      });
+      const lockBody = new THREE.Mesh(lockBodyGeom, metalLockMat);
+      lockBody.castShadow = true;
+      lockBody.receiveShadow = true;
+      smartLockGroup.add(lockBody);
+
+      // Front Acrylic / Tempered Glass Panel with Keypad Canvas
+      const keypadCanvas = createKeypadCanvas();
+      const keypadTexture = new THREE.CanvasTexture(keypadCanvas);
+      const glassFaceGeom = new THREE.PlaneGeometry(0.40, 1.66);
+      const glassMat = new THREE.MeshStandardMaterial({
+        map: keypadTexture,
+        metalness: 0.2,
+        roughness: 0.1,
+        transparent: false,
+      });
+      const glassFace = new THREE.Mesh(glassFaceGeom, glassMat);
+      glassFace.position.set(0, 0, 0.041);
+      glassFace.name = "keypadFace";
+      smartLockGroup.add(glassFace);
+
+      // Status Indicator LED Bar
+      const ledGeom = new THREE.BoxGeometry(0.12, 0.012, 0.005);
+      const ledMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+      statusLedMesh = new THREE.Mesh(ledGeom, ledMat);
+      statusLedMesh.position.set(0, 0.72, 0.043);
+      smartLockGroup.add(statusLedMesh);
+
+      // --- 3. Smart Handle Pivot & Handle with Biometric Scanner ---
+      handlePivot = new THREE.Group();
+      handlePivot.position.set(0, -0.08, 0.06); // Pivot center
+
+      // Handle Base Ring
+      const baseRingGeom = new THREE.CylinderGeometry(0.095, 0.095, 0.05, 32);
+      baseRingGeom.rotateX(Math.PI / 2);
+      const handleBase = new THREE.Mesh(baseRingGeom, metalLockMat);
+      handlePivot.add(handleBase);
+
+      // Biometric Fingerprint Sensor (Circular Glowing Ring on Handle Axis)
+      const fpRingGeom = new THREE.RingGeometry(0.045, 0.065, 32);
+      const fpRingMat = new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide });
+      const fpRing = new THREE.Mesh(fpRingGeom, fpRingMat);
+      fpRing.position.set(0, 0, 0.026);
+      fpRing.name = "fingerprintSensor";
+      handlePivot.add(fpRing);
+
+      const fpCenterGeom = new THREE.CircleGeometry(0.042, 32);
+      const fpCenterMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.5, metalness: 0.8 });
+      const fpCenter = new THREE.Mesh(fpCenterGeom, fpCenterMat);
+      fpCenter.position.set(0, 0, 0.025);
+      handlePivot.add(fpCenter);
+
+      // Lever Arm extending horizontally to the right
+      const leverGeom = new THREE.BoxGeometry(0.55, 0.08, 0.055);
+      leverGeom.translate(0.24, 0, 0); // Offset to swing from pivot
+      const lever = new THREE.Mesh(leverGeom, metalLockMat);
+      lever.position.set(0, 0, 0.015);
+      lever.castShadow = true;
+      lever.name = "handleLever";
+      handlePivot.add(lever);
+
+      smartLockGroup.add(handlePivot);
+
+      // Mechanical Emergency Key Hole Plate (Bottom)
+      const keyHolePlate = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, 0.01, 24),
+        metalLockMat
+      );
+      keyHolePlate.rotateX(Math.PI / 2);
+      keyHolePlate.position.set(0, -0.68, 0.042);
+      smartLockGroup.add(keyHolePlate);
+
+      mainGroup.add(smartLockGroup);
+      scene.add(mainGroup);
+
+      // Floating dust particles for 3D cinematic depth
+      createAtmosphericParticles();
+    }
+
+    function createAtmosphericParticles() {
+      const particleCount = 70;
+      const geom = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 8;
+        positions[i + 1] = (Math.random() - 0.5) * 6;
+        positions[i + 2] = (Math.random() - 0.5) * 6;
+      }
+
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xf59e0b,
+        size: 0.035,
+        transparent: true,
+        opacity: 0.5,
+      });
+
+      const particleSystem = new THREE.Points(geom, mat);
+      scene.add(particleSystem);
+
+      gsap.to(particleSystem.rotation, {
+        y: Math.PI * 2,
+        duration: 90,
+        repeat: -1,
+        ease: "none"
+      });
+    }
+
+    // Dynamic Camera View Transitions
+    function setCameraView(view) {
+      playBeep(640, 0.05, "triangle");
+      if (view === 'overview') {
+        gsap.to(camera.position, { x: 2.2, y: 0.4, z: 4.2, duration: 1.4, ease: "power2.inOut" });
+        gsap.to(controls.target, { x: 0.6, y: -0.1, z: 0, duration: 1.4, ease: "power2.inOut" });
+      } else if (view === 'keypad') {
+        gsap.to(camera.position, { x: 0.9, y: 0.5, z: 1.6, duration: 1.2, ease: "power2.inOut" });
+        gsap.to(controls.target, { x: 0.65, y: 0.45, z: 0, duration: 1.2, ease: "power2.inOut" });
+      } else if (view === 'handle') {
+        gsap.to(camera.position, { x: 0.95, y: -0.05, z: 1.4, duration: 1.2, ease: "power2.inOut" });
+        gsap.to(controls.target, { x: 0.68, y: -0.05, z: 0, duration: 1.2, ease: "power2.inOut" });
+      }
+    }
+
+    // Unlock Interactive Sequence
+    function triggerUnlock() {
+      if (isUnlocked) return;
+      isUnlocked = true;
+
+      playBeep(987, 0.09, "sine");
+      setTimeout(() => playBeep(1318, 0.15, "sine"), 100);
+
+      // Status LED turns bright emerald green
+      statusLedMesh.material.color.setHex(0x10b981);
+
+      // Handle downward rotation
+      gsap.to(handlePivot.rotation, {
+        z: -0.55,
+        duration: 0.4,
+        ease: "back.out(1.5)",
+        onComplete: () => {
+          // Retract latch bolt
+          const latch = scene.getObjectByName("latchBolt");
+          if (latch) gsap.to(latch.position, { x: 0.38, duration: 0.3 });
+
+          // Return after delay
+          setTimeout(() => {
+            gsap.to(handlePivot.rotation, { z: 0, duration: 0.5, ease: "bounce.out" });
+            if (latch) gsap.to(latch.position, { x: 0.44, duration: 0.4 });
+            statusLedMesh.material.color.setHex(0xf97316);
+            isUnlocked = false;
+            playBeep(440, 0.12, "sawtooth");
+          }, 1400);
+        }
+      });
+    }
+
+    // Pointer Click Handler for Interactive 3D parts
+    function onPointerClick(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      if (intersects.length > 0) {
+        const obj = intersects[0].object;
+        if (obj.name === "handleLever" || obj.name === "fingerprintSensor" || obj.parent === handlePivot) {
+          triggerUnlock();
+        } else if (obj.name === "keypadFace") {
+          playBeep(1046, 0.06, "square");
+          // Quick flash
+          statusLedMesh.material.color.setHex(0x38bdf8);
+          setTimeout(() => {
+            statusLedMesh.material.color.setHex(0xf97316);
+          }, 150);
+        }
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // Animation Render Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Subtle float animation if not dragging
+      const time = Date.now() * 0.0015;
+      if (smartLockGroup) {
+        smartLockGroup.position.y = 0.1 + Math.sin(time) * 0.015;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Initialize once DOM is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      init3D();
+      animate();
+
+      // Entrance animation for Badges & Overlay UI
+      gsap.from(".promo-badge", {
+        x: -120,
+        opacity: 0,
+        stagger: 0.14,
+        duration: 0.9,
+        ease: "back.out(1.6)"
+      });
+      gsap.from(".feature-item", {
+        scale: 0.5,
+        opacity: 0,
+        stagger: 0.08,
+        delay: 0.4,
+        duration: 0.6,
+        ease: "back.out"
+      });
+    });
+  </script>
+</body>
+</html>
